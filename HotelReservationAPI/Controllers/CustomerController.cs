@@ -8,61 +8,71 @@ namespace HotelReservationAPI.Controllers
     [Route("api/customer")]
     public class CustomerController : ControllerBase
     {
-        CustomerHelper helper = new CustomerHelper();
+        private readonly CustomerHelper helper = new CustomerHelper();
 
         // ================= ADD =================
         [HttpPost]
         public IActionResult Add(Customer customer)
         {
-            return Ok(helper.AddCustomer(customer));
+            string result = helper.AddCustomer(customer);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= GET ALL =================
         [HttpGet]
         public IActionResult GetAll()
         {
-            try
-            {
-                return Ok(helper.GetAllCustomers());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var (customers, status) = helper.GetAllCustomers();
+
+            if (status == "Success")
+                return Ok(customers);
+
+            return BadRequest(status);
         }
 
         // ================= GET BY ID =================
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
-            try
-            {
-                Customer customer = helper.GetCustomerById(id);
+            var (customer, status) = helper.GetCustomerById(id);
 
-                if (customer == null)
-                    return NotFound("Customer Not Found");
+            if (status != "Success")
+                return BadRequest(status);
 
-                return Ok(customer);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            if (customer == null)
+                return NotFound("Customer Not Found");
+
+            return Ok(customer);
         }
 
         // ================= UPDATE =================
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, Customer customer)
+        [HttpPatch("{id}")]
+        public IActionResult Patch(int id, Customer customer)
         {
             customer.CustomerID = id;
-            return Ok(helper.UpdateCustomer(customer));
+            string result = helper.UpdateCustomer(customer);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
+
 
         // ================= DELETE =================
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            return Ok(helper.DeleteCustomer(id));
+            string result = helper.DeleteCustomer(id);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
     }
 }

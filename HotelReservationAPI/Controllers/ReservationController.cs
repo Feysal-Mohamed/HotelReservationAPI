@@ -1,7 +1,6 @@
 ﻿using HotelReservationAPI.Helper;
 using HotelReservationAPI.MODEL;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace HotelReservationAPI.Controllers
 {
@@ -9,46 +8,45 @@ namespace HotelReservationAPI.Controllers
     [Route("api/reservation")]
     public class ReservationController : ControllerBase
     {
-        ReservationHelper helper = new ReservationHelper();
+        private readonly ReservationHelper helper = new ReservationHelper();
 
         // ================= ADD =================
         [HttpPost]
         public IActionResult Add(Reservation r)
         {
-            return Ok(helper.AddReservation(r));
+            string result = helper.AddReservation(r);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= GET ALL =================
         [HttpGet]
         public IActionResult GetAll()
         {
-            try
-            {
-                return Ok(helper.GetAllReservations());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var (reservations, status) = helper.GetAllReservations();
+
+            if (status == "Success")
+                return Ok(reservations);
+
+            return BadRequest(status);
         }
 
         // ================= GET BY ID =================
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
-            try
-            {
-                var reservation = helper.GetReservationById(id);
+            var (reservation, status) = helper.GetReservationById(id);
 
-                if (reservation == null)
-                    return NotFound("Reservation Not Found");
+            if (status != "Success")
+                return BadRequest(status);
 
-                return Ok(reservation);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            if (reservation == null)
+                return NotFound("Reservation Not Found");
+
+            return Ok(reservation);
         }
 
         // ================= UPDATE =================
@@ -56,14 +54,24 @@ namespace HotelReservationAPI.Controllers
         public IActionResult Update(int id, Reservation r)
         {
             r.ReservationID = id;
-            return Ok(helper.UpdateReservation(r));
+            string result = helper.UpdateReservation(r);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= DELETE =================
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            return Ok(helper.DeleteReservation(id));
+            string result = helper.DeleteReservation(id);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
     }
 }

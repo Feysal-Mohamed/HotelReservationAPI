@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using HotelReservationAPI.MODEL;
-using System;
+﻿using HotelReservationAPI.MODEL;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HotelReservationAPI.Controllers
 {
@@ -8,46 +7,45 @@ namespace HotelReservationAPI.Controllers
     [Route("api/room")]
     public class RoomController : ControllerBase
     {
-        RoomHelper helper = new RoomHelper();
+        private readonly RoomHelper helper = new RoomHelper();
 
         // ================= ADD =================
         [HttpPost]
         public IActionResult Add(Room room)
         {
-            return Ok(helper.AddRoom(room));
+            string result = helper.AddRoom(room);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= GET ALL =================
         [HttpGet]
         public IActionResult GetAll()
         {
-            try
-            {
-                return Ok(helper.GetAllRooms());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var (rooms, status) = helper.GetAllRooms();
+
+            if (status == "Success")
+                return Ok(rooms);
+
+            return BadRequest(status);
         }
 
         // ================= GET BY ID =================
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
-            try
-            {
-                var room = helper.GetRoomById(id);
+            var (room, status) = helper.GetRoomById(id);
 
-                if (room == null)
-                    return NotFound("Room Not Found");
+            if (status != "Success")
+                return BadRequest(status);
 
-                return Ok(room);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            if (room == null)
+                return NotFound("Room Not Found");
+
+            return Ok(room);
         }
 
         // ================= UPDATE =================
@@ -55,14 +53,24 @@ namespace HotelReservationAPI.Controllers
         public IActionResult Update(int id, Room room)
         {
             room.RoomID = id;
-            return Ok(helper.UpdateRoom(room));
+            string result = helper.UpdateRoom(room);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= DELETE =================
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            return Ok(helper.DeleteRoom(id));
+            string result = helper.DeleteRoom(id);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
     }
 }

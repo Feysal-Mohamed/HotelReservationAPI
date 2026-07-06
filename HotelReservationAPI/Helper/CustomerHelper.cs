@@ -1,26 +1,23 @@
 ﻿using HotelReservationAPI.MODEL;
-
 using Microsoft.Data.SqlClient;
 
 namespace HotelReservationAPI.Helper
 {
     public class CustomerHelper
     {
-
         private readonly string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
 
         // ===================== ADD =====================
-        public bool AddCustomer(Customer customer)
+        public string AddCustomer(Customer customer)
         {
             try
             {
                 using (SqlConnection connection = new SqlConnection(conn))
                 {
                     string query = @"
-                    INSERT INTO Customers
-                    (FirstName, LastName, Phone, Email, Address, CreatedAt)
-                        VALUES
-                        (@FirstName, @LastName, @Phone, @Email, @Address, @CreatedAt)";
+                        INSERT INTO Customers (FirstName, LastName, Phone, Email, Address, CreatedAt)
+                        VALUES (@FirstName, @LastName, @Phone, @Email, @Address, @CreatedAt);
+                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                     using (SqlCommand cmd = new SqlCommand(query, connection))
                     {
@@ -32,122 +29,153 @@ namespace HotelReservationAPI.Helper
                         cmd.Parameters.AddWithValue("@CreatedAt", DateTime.Now);
 
                         connection.Open();
-                        return cmd.ExecuteNonQuery() > 0;
+                        int newId = (int)cmd.ExecuteScalar();
+                        return $"Success: New CustomerID = {newId}";
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return $"Error: {ex.Message}";
             }
         }
 
         // ===================== GET ALL =====================
-        public List<Customer> GetAllCustomers()
+        public (List<Customer>, string) GetAllCustomers()
         {
             List<Customer> list = new List<Customer>();
-
-            using (SqlConnection connection = new SqlConnection(conn))
+            try
             {
-                string query = "SELECT * FROM Customers";
-
-                using (SqlCommand cmd = new SqlCommand(query, connection))
+                using (SqlConnection connection = new SqlConnection(conn))
                 {
-                    connection.Open();
-                    SqlDataReader reader = cmd.ExecuteReader();
+                    string query = "SELECT * FROM Customers";
 
-                    while (reader.Read())
+                    using (SqlCommand cmd = new SqlCommand(query, connection))
                     {
-                        list.Add(new Customer
+                        connection.Open();
+                        SqlDataReader reader = cmd.ExecuteReader();
+
+                        while (reader.Read())
                         {
-                            CustomerID = Convert.ToInt32(reader["CustomerID"]),
-                            FirstName = reader["FirstName"].ToString(),
-                            LastName = reader["LastName"].ToString(),
-                            Phone = reader["Phone"].ToString(),
-                            Email = reader["Email"].ToString(),
-                            Address = reader["Address"].ToString(),
-                            CreatedAt = Convert.ToDateTime(reader["CreatedAt"])
-                        });
+                            list.Add(new Customer
+                            {
+                                CustomerID = Convert.ToInt32(reader["CustomerID"]),
+                                FirstName = reader["FirstName"].ToString(),
+                                LastName = reader["LastName"].ToString(),
+                                Phone = reader["Phone"].ToString(),
+                                Email = reader["Email"].ToString(),
+                                Address = reader["Address"].ToString(),
+                                CreatedAt = Convert.ToDateTime(reader["CreatedAt"])
+                            });
+                        }
                     }
                 }
+                return (list, "Success");
             }
-
-            return list;
+            catch (Exception ex)
+            {
+                return (list, $"Error: {ex.Message}");
+            }
         }
 
         // ===================== GET BY ID =====================
-        public Customer GetCustomerById(int id)
+        public (Customer?, string) GetCustomerById(int id)
         {
-            Customer customer = null;
-
-            using (SqlConnection connection = new SqlConnection(conn))
+            Customer? customer = null;
+            try
             {
-                string query = "SELECT * FROM Customers WHERE CustomerID = @Id";
-
-                using (SqlCommand cmd = new SqlCommand(query, connection))
+                using (SqlConnection connection = new SqlConnection(conn))
                 {
-                    cmd.Parameters.AddWithValue("@Id", id);
+                    string query = "SELECT * FROM Customers WHERE CustomerID = @Id";
 
-                    connection.Open();
-                    SqlDataReader reader = cmd.ExecuteReader();
-
-                    if (reader.Read())
+                    using (SqlCommand cmd = new SqlCommand(query, connection))
                     {
-                        customer = new Customer
+                        cmd.Parameters.AddWithValue("@Id", id);
+
+                        connection.Open();
+                        SqlDataReader reader = cmd.ExecuteReader();
+
+                        if (reader.Read())
                         {
-                            CustomerID = Convert.ToInt32(reader["CustomerID"]),
-                            FirstName = reader["FirstName"].ToString(),
-                            LastName = reader["LastName"].ToString(),
-                            Phone = reader["Phone"].ToString(),
-                            Email = reader["Email"].ToString(),
-                            Address = reader["Address"].ToString(),
-                            CreatedAt = Convert.ToDateTime(reader["CreatedAt"])
-                        };
+                            customer = new Customer
+                            {
+                                CustomerID = Convert.ToInt32(reader["CustomerID"]),
+                                FirstName = reader["FirstName"].ToString(),
+                                LastName = reader["LastName"].ToString(),
+                                Phone = reader["Phone"].ToString(),
+                                Email = reader["Email"].ToString(),
+                                Address = reader["Address"].ToString(),
+                                CreatedAt = Convert.ToDateTime(reader["CreatedAt"])
+                            };
+                        }
                     }
                 }
+                return (customer, "Success");
             }
-
-            return customer;
+            catch (Exception ex)
+            {
+                return (customer, $"Error: {ex.Message}");
+            }
         }
 
-        // ===================== UPDATE (PUT) =====================
-        public bool UpdateCustomer(Customer customer)
+        // ===================== UPDATE (Partial Update) =====================
+        public string UpdateCustomer(Customer customer)
         {
             try
             {
                 using (SqlConnection connection = new SqlConnection(conn))
                 {
-                    string query = @"
-                        UPDATE Customers
-                        SET FirstName = @FirstName,
-                            LastName = @LastName,
-                            Phone = @Phone,
-                            Email = @Email,
-                            Address = @Address
-                        WHERE CustomerID = @CustomerID";
+                    List<string> updates = new List<string>();
+                    SqlCommand cmd = new SqlCommand();
 
-                    using (SqlCommand cmd = new SqlCommand(query, connection))
+                    if (!string.IsNullOrEmpty(customer.FirstName))
                     {
-                        cmd.Parameters.AddWithValue("@CustomerID", customer.CustomerID);
+                        updates.Add("FirstName = @FirstName");
                         cmd.Parameters.AddWithValue("@FirstName", customer.FirstName);
-                        cmd.Parameters.AddWithValue("@LastName", customer.LastName);
-                        cmd.Parameters.AddWithValue("@Phone", customer.Phone);
-                        cmd.Parameters.AddWithValue("@Email", customer.Email);
-                        cmd.Parameters.AddWithValue("@Address", customer.Address);
-
-                        connection.Open();
-                        return cmd.ExecuteNonQuery() > 0;
                     }
+                    if (!string.IsNullOrEmpty(customer.LastName))
+                    {
+                        updates.Add("LastName = @LastName");
+                        cmd.Parameters.AddWithValue("@LastName", customer.LastName);
+                    }
+                    if (!string.IsNullOrEmpty(customer.Phone))
+                    {
+                        updates.Add("Phone = @Phone");
+                        cmd.Parameters.AddWithValue("@Phone", customer.Phone);
+                    }
+                    if (!string.IsNullOrEmpty(customer.Email))
+                    {
+                        updates.Add("Email = @Email");
+                        cmd.Parameters.AddWithValue("@Email", customer.Email);
+                    }
+                    if (!string.IsNullOrEmpty(customer.Address))
+                    {
+                        updates.Add("Address = @Address");
+                        cmd.Parameters.AddWithValue("@Address", customer.Address);
+                    }
+
+                    if (updates.Count == 0)
+                        return "Error: No fields to update";
+
+                    string query = $"UPDATE Customers SET {string.Join(", ", updates)} WHERE CustomerID = @CustomerID";
+                    cmd.CommandText = query;
+                    cmd.Connection = connection;
+                    cmd.Parameters.AddWithValue("@CustomerID", customer.CustomerID);
+
+                    connection.Open();
+                    int rows = cmd.ExecuteNonQuery();
+
+                    return rows > 0 ? "Success: Customer updated" : "Error: No rows affected";
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return $"Error: {ex.Message}";
             }
         }
 
         // ===================== DELETE =====================
-        public bool DeleteCustomer(int id)
+        public string DeleteCustomer(int id)
         {
             try
             {
@@ -160,16 +188,15 @@ namespace HotelReservationAPI.Helper
                         cmd.Parameters.AddWithValue("@Id", id);
 
                         connection.Open();
-                        return cmd.ExecuteNonQuery() > 0;
+                        int rows = cmd.ExecuteNonQuery();
+                        return rows > 0 ? "Success: Customer deleted" : "Error: No rows affected";
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return $"Error: {ex.Message}";
             }
         }
     }
 }
-
-

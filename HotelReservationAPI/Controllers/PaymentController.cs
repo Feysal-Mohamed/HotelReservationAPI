@@ -1,7 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using HotelReservationAPI.MODEL;
+﻿using HotelReservationAPI.MODEL;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HotelReservationAPI.Controllers
 {
@@ -9,46 +7,45 @@ namespace HotelReservationAPI.Controllers
     [Route("api/payment")]
     public class PaymentController : ControllerBase
     {
-        PaymentHelper helper = new PaymentHelper();
+        private readonly PaymentHelper helper = new PaymentHelper();
 
         // ================= ADD =================
         [HttpPost]
         public IActionResult Add(Payment p)
         {
-            return Ok(helper.AddPayment(p));
+            string result = helper.AddPayment(p);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= GET ALL =================
         [HttpGet]
         public IActionResult GetAll()
         {
-            try
-            {
-                return Ok(helper.GetAllPayments());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var (payments, status) = helper.GetAllPayments();
+
+            if (status == "Success")
+                return Ok(payments);
+
+            return BadRequest(status);
         }
 
         // ================= GET BY ID =================
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
-            try
-            {
-                var payment = helper.GetPaymentById(id);
+            var (payment, status) = helper.GetPaymentById(id);
 
-                if (payment == null)
-                    return NotFound("Payment Not Found");
+            if (status != "Success")
+                return BadRequest(status);
 
-                return Ok(payment);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            if (payment == null)
+                return NotFound("Payment Not Found");
+
+            return Ok(payment);
         }
 
         // ================= UPDATE =================
@@ -56,14 +53,24 @@ namespace HotelReservationAPI.Controllers
         public IActionResult Update(int id, Payment p)
         {
             p.PaymentID = id;
-            return Ok(helper.UpdatePayment(p));
+            string result = helper.UpdatePayment(p);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
 
         // ================= DELETE =================
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            return Ok(helper.DeletePayment(id));
+            string result = helper.DeletePayment(id);
+
+            if (result.StartsWith("Success"))
+                return Ok(result);
+
+            return BadRequest(result);
         }
     }
 }

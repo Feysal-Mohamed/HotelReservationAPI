@@ -6,7 +6,7 @@ namespace HotelReservationAPI.MODEL
 {
     public class RoomHelper
     {
-        string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
+        private readonly string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
 
         // ================= ADD =================
         public string AddRoom(Room room)
@@ -15,13 +15,12 @@ namespace HotelReservationAPI.MODEL
             {
                 using (SqlConnection con = new SqlConnection(conn))
                 {
-                    string query = @"INSERT INTO Rooms
-                                    (RoomNumber, RoomType, PricePerNight, Capacity, Status)
-                                    VALUES
-                                    (@RoomNumber, @RoomType, @PricePerNight, @Capacity, @Status)";
+                    string query = @"
+                        INSERT INTO Rooms (RoomNumber, RoomType, PricePerNight, Capacity, Status)
+                        VALUES (@RoomNumber, @RoomType, @PricePerNight, @Capacity, @Status);
+                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                     SqlCommand cmd = new SqlCommand(query, con);
-
                     cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
                     cmd.Parameters.AddWithValue("@RoomType", room.RoomType);
                     cmd.Parameters.AddWithValue("@PricePerNight", room.PricePerNight);
@@ -29,28 +28,26 @@ namespace HotelReservationAPI.MODEL
                     cmd.Parameters.AddWithValue("@Status", room.Status);
 
                     con.Open();
-                    cmd.ExecuteNonQuery();
+                    int newId = (int)cmd.ExecuteScalar();
 
-                    return "Room Added Successfully";
+                    return $"Success: New RoomID = {newId}";
                 }
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                return $"Error: {ex.Message}";
             }
         }
 
         // ================= GET ALL =================
-        public List<Room> GetAllRooms()
+        public (List<Room>, string) GetAllRooms()
         {
             List<Room> list = new List<Room>();
-
             try
             {
                 using (SqlConnection con = new SqlConnection(conn))
                 {
                     string query = "SELECT * FROM Rooms";
-
                     SqlCommand cmd = new SqlCommand(query, con);
 
                     con.Open();
@@ -69,24 +66,23 @@ namespace HotelReservationAPI.MODEL
                         });
                     }
                 }
-
-                return list;
+                return (list, "Success");
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                return (list, $"Error: {ex.Message}");
             }
         }
 
         // ================= GET BY ID =================
-        public Room GetRoomById(int id)
+        public (Room?, string) GetRoomById(int id)
         {
+            Room? room = null;
             try
             {
                 using (SqlConnection con = new SqlConnection(conn))
                 {
                     string query = "SELECT * FROM Rooms WHERE RoomID=@RoomID";
-
                     SqlCommand cmd = new SqlCommand(query, con);
                     cmd.Parameters.AddWithValue("@RoomID", id);
 
@@ -95,7 +91,7 @@ namespace HotelReservationAPI.MODEL
 
                     if (reader.Read())
                     {
-                        return new Room
+                        room = new Room
                         {
                             RoomID = Convert.ToInt32(reader["RoomID"]),
                             RoomNumber = reader["RoomNumber"].ToString(),
@@ -105,51 +101,68 @@ namespace HotelReservationAPI.MODEL
                             Status = reader["Status"].ToString()
                         };
                     }
-
-                    return null;
                 }
+                return (room, "Success");
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                return (room, $"Error: {ex.Message}");
             }
         }
 
-        // ================= UPDATE =================
+        // ================= UPDATE (Partial Update) =================
         public string UpdateRoom(Room room)
         {
             try
             {
                 using (SqlConnection con = new SqlConnection(conn))
                 {
-                    string query = @"UPDATE Rooms
-                                    SET RoomNumber=@RoomNumber,
-                                        RoomType=@RoomType,
-                                        PricePerNight=@PricePerNight,
-                                        Capacity=@Capacity,
-                                        Status=@Status
-                                    WHERE RoomID=@RoomID";
+                    List<string> updates = new List<string>();
+                    SqlCommand cmd = new SqlCommand();
 
-                    SqlCommand cmd = new SqlCommand(query, con);
+                    if (!string.IsNullOrEmpty(room.RoomNumber))
+                    {
+                        updates.Add("RoomNumber=@RoomNumber");
+                        cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
+                    }
+                    if (!string.IsNullOrEmpty(room.RoomType))
+                    {
+                        updates.Add("RoomType=@RoomType");
+                        cmd.Parameters.AddWithValue("@RoomType", room.RoomType);
+                    }
+                    if (room.PricePerNight > 0)
+                    {
+                        updates.Add("PricePerNight=@PricePerNight");
+                        cmd.Parameters.AddWithValue("@PricePerNight", room.PricePerNight);
+                    }
+                    if (room.Capacity > 0)
+                    {
+                        updates.Add("Capacity=@Capacity");
+                        cmd.Parameters.AddWithValue("@Capacity", room.Capacity);
+                    }
+                    if (!string.IsNullOrEmpty(room.Status))
+                    {
+                        updates.Add("Status=@Status");
+                        cmd.Parameters.AddWithValue("@Status", room.Status);
+                    }
 
+                    if (updates.Count == 0)
+                        return "Error: No fields to update";
+
+                    string query = $"UPDATE Rooms SET {string.Join(", ", updates)} WHERE RoomID=@RoomID";
+                    cmd.CommandText = query;
+                    cmd.Connection = con;
                     cmd.Parameters.AddWithValue("@RoomID", room.RoomID);
-                    cmd.Parameters.AddWithValue("@RoomNumber", room.RoomNumber);
-                    cmd.Parameters.AddWithValue("@RoomType", room.RoomType);
-                    cmd.Parameters.AddWithValue("@PricePerNight", room.PricePerNight);
-                    cmd.Parameters.AddWithValue("@Capacity", room.Capacity);
-                    cmd.Parameters.AddWithValue("@Status", room.Status);
 
                     con.Open();
+                    int rows = cmd.ExecuteNonQuery();
 
-                    if (cmd.ExecuteNonQuery() > 0)
-                        return "Room Updated Successfully";
-
-                    return "Room Not Found";
+                    return rows > 0 ? "Success: Room updated" : "Error: No rows affected";
                 }
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                return $"Error: {ex.Message}";
             }
         }
 
@@ -161,21 +174,18 @@ namespace HotelReservationAPI.MODEL
                 using (SqlConnection con = new SqlConnection(conn))
                 {
                     string query = "DELETE FROM Rooms WHERE RoomID=@RoomID";
-
                     SqlCommand cmd = new SqlCommand(query, con);
                     cmd.Parameters.AddWithValue("@RoomID", id);
 
                     con.Open();
+                    int rows = cmd.ExecuteNonQuery();
 
-                    if (cmd.ExecuteNonQuery() > 0)
-                        return "Room Deleted Successfully";
-
-                    return "Room Not Found";
+                    return rows > 0 ? "Success: Room deleted" : "Error: Room Not Found";
                 }
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                return $"Error: {ex.Message}";
             }
         }
     }
