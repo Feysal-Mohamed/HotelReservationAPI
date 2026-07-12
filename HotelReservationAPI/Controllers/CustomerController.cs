@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace HotelReservationAPI.Controllers
 {
     [ApiController]
-    [Route("api/customer")]
+    //[Route("api/customer")]
+    [Route("api/[controller]")]
     public class CustomerController : ControllerBase
     {
         private readonly CustomerHelper helper = new CustomerHelper();
