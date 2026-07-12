@@ -1,4 +1,5 @@
-﻿using HotelReservationAPI.MODEL;
+﻿using HotelReservationAPI.Helper;
+using HotelReservationAPI.MODEL;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelReservationAPI.Controllers
@@ -13,6 +14,17 @@ namespace HotelReservationAPI.Controllers
         [HttpPost]
         public IActionResult Add(Payment p)
         {
+            // Check Reservation
+            ReservationHelper reservationHelper = new ReservationHelper();
+            var (reservation, status) = reservationHelper.GetReservationById(p.ReservationID);
+
+            if (status != "Success")
+                return BadRequest(status);
+
+            if (reservation == null)
+                return BadRequest("Reservation ID does not exist.");
+
+            // Add Payment
             string result = helper.AddPayment(p);
 
             if (result.StartsWith("Success"))
@@ -53,6 +65,18 @@ namespace HotelReservationAPI.Controllers
         public IActionResult Update(int id, Payment p)
         {
             p.PaymentID = id;
+
+            // Check Reservation
+            ReservationHelper reservationHelper = new ReservationHelper();
+            var (reservation, status) = reservationHelper.GetReservationById(p.ReservationID);
+
+            if (status != "Success")
+                return BadRequest(status);
+
+            if (reservation == null)
+                return BadRequest("Reservation ID does not exist.");
+
+            // Update Payment
             string result = helper.UpdatePayment(p);
 
             if (result.StartsWith("Success"))

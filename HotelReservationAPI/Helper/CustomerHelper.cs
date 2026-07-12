@@ -1,12 +1,12 @@
 ﻿using HotelReservationAPI.MODEL;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace HotelReservationAPI.Helper
 {
     public class CustomerHelper
     {
-        private readonly string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
-
+        private readonly string conn = AppConfig.ConnectionString;
         // ===================== ADD =====================
         public string AddCustomer(Customer customer)
         {

@@ -1,6 +1,7 @@
 ﻿using HotelReservationAPI.Helper;
 using HotelReservationAPI.MODEL;
 using Microsoft.AspNetCore.Mvc;
+//using System.Linq;
 
 namespace HotelReservationAPI.Controllers
 {
@@ -12,8 +13,24 @@ namespace HotelReservationAPI.Controllers
 
         // ================= ADD =================
         [HttpPost]
+        [HttpPost]
         public IActionResult Add(Customer customer)
         {
+            // Get all customers
+            var (customers, status) = helper.GetAllCustomers();
+
+            if (status != "Success")
+                return BadRequest(status);
+
+            // Check if customer already exists
+            bool exists = customers.Any(c =>
+                c.Email.Equals(customer.Email, StringComparison.OrdinalIgnoreCase) ||
+                c.Phone == customer.Phone);
+
+            if (exists)
+                return BadRequest("Customer already exists.");
+
+            // Add customer
             string result = helper.AddCustomer(customer);
 
             if (result.StartsWith("Success"))

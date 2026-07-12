@@ -11,9 +11,31 @@ namespace HotelReservationAPI.Controllers
         private readonly ReservationHelper helper = new ReservationHelper();
 
         // ================= ADD =================
+
         [HttpPost]
         public IActionResult Add(Reservation r)
         {
+            // Check Customer
+            CustomerHelper customerHelper = new CustomerHelper();
+            var (customer, customerStatus) = customerHelper.GetCustomerById(r.CustomerID);
+
+            if (customerStatus != "Success")
+                return BadRequest(customerStatus);
+
+            if (customer == null)
+                return BadRequest("Customer ID does not exist.");
+
+            // Check Room
+            RoomHelper roomHelper = new RoomHelper();
+            var (room, roomStatus) = roomHelper.GetRoomById(r.RoomID);
+
+            if (roomStatus != "Success")
+                return BadRequest(roomStatus);
+
+            if (room == null)
+                return BadRequest("Room ID does not exist.");
+
+            // Add Reservation
             string result = helper.AddReservation(r);
 
             if (result.StartsWith("Success"))
@@ -50,10 +72,33 @@ namespace HotelReservationAPI.Controllers
         }
 
         // ================= UPDATE =================
+      
         [HttpPut("{id}")]
         public IActionResult Update(int id, Reservation r)
         {
             r.ReservationID = id;
+
+            // Check Customer
+            CustomerHelper customerHelper = new CustomerHelper();
+            var (customer, customerStatus) = customerHelper.GetCustomerById(r.CustomerID);
+
+            if (customerStatus != "Success")
+                return BadRequest(customerStatus);
+
+            if (customer == null)
+                return BadRequest("Customer ID does not exist.");
+
+            // Check Room
+            RoomHelper roomHelper = new RoomHelper();
+            var (room, roomStatus) = roomHelper.GetRoomById(r.RoomID);
+
+            if (roomStatus != "Success")
+                return BadRequest(roomStatus);
+
+            if (room == null)
+                return BadRequest("Room ID does not exist.");
+
+            // Update Reservation
             string result = helper.UpdateReservation(r);
 
             if (result.StartsWith("Success"))

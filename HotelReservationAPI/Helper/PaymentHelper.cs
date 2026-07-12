@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using HotelReservationAPI.Helper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace HotelReservationAPI.MODEL
 {
     public class PaymentHelper
     {
-        private readonly string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
-
+        private readonly string conn = AppConfig.ConnectionString;
         // ================= ADD =================
         public string AddPayment(Payment p)
         {

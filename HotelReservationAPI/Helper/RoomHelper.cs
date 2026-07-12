@@ -1,13 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using HotelReservationAPI.Helper;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Net.Sockets;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace HotelReservationAPI.MODEL
 {
     public class RoomHelper
     {
-        private readonly string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
-
+        private readonly string conn = AppConfig.ConnectionString;
         // ================= ADD =================
         public string AddRoom(Room room)
         {

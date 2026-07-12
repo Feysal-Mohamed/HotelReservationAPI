@@ -3,12 +3,12 @@ using System;
 using System.Collections.Generic;
 using HotelReservationAPI.MODEL;
 
+       using Microsoft.Extensions.Configuration;
 namespace HotelReservationAPI.Helper
 {
     public class ReservationHelper
     {
-        private readonly string conn = "Data Source=DESKTOP-0ID2UPP;Initial Catalog=HotelReservationDB;Integrated Security=True;Trust Server Certificate=True";
-
+        private readonly string conn = AppConfig.ConnectionString;
         // ================= ADD =================
         public string AddReservation(Reservation r)
         {

@@ -38,11 +38,11 @@ namespace HotelReservationAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null || !VerifyPassword(request.PasswordHash, user.PasswordHash))
                 return Unauthorized("Invalid credentials.");
 
-            var token = _jwtHelper.GenerateToken(user.Username, user.Role);
+            var token = _jwtHelper.GenerateToken(user.Email, user.Role);
             return Ok(new { Token = token });
         }
 
