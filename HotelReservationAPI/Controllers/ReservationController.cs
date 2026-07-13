@@ -45,15 +45,28 @@ namespace HotelReservationAPI.Controllers
         }
 
         // ================= GET ALL =================
+        //[HttpGet]
+        //public IActionResult GetAll()
+        //{
+        //    var (reservations, status) = helper.GetAllReservations();
+
+        //    if (status == "Success")
+        //        return Ok(reservations);
+
+        //    return BadRequest(status);
+        //}
         [HttpGet]
         public IActionResult GetAll()
         {
-            var (reservations, status) = helper.GetAllReservations();
-
-            if (status == "Success")
-                return Ok(reservations);
-
-            return BadRequest(status);
+            try
+            {
+                var (reservations, status) = helper.GetAllReservations();
+                return Ok(new { status, reservations });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.ToString());
+            }
         }
 
         // ================= GET BY ID =================

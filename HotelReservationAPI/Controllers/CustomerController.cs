@@ -7,7 +7,7 @@ namespace HotelReservationAPI.Controllers
 {
     [ApiController]
     //[Route("api/customer")]
-    [Route("api/[controller]")]
+    [Route("api/customers")]
     public class CustomerController : ControllerBase
     {
         private readonly CustomerHelper helper = new CustomerHelper();
