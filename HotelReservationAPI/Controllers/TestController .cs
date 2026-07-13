@@ -11,6 +11,7 @@ public class TestController : ControllerBase
     {
         try
         {
+            //gjhgbkb?\
             using var con = new SqlConnection(AppConfig.ConnectionString);
             con.Open();
 
