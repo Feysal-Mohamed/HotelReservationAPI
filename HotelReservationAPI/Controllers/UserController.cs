@@ -20,18 +20,28 @@ namespace HotelReservationAPI.Controllers
             _jwtHelper = jwtHelper;
         }
 
+    
         // ================= REGISTER =================
         [HttpPost("register")]
         public async Task<IActionResult> Register(User user)
         {
-            if (await _context.Users.AnyAsync(u => u.Username == user.Username || u.Email == user.Email))
+            if (await _context.Users.AnyAsync(u =>
+                u.Username == user.Username ||
+                u.Email == user.Email))
+            {
                 return BadRequest("Username or Email already exists.");
-
+            }
+            // NEW: Automatically assign role
+            user.Role = "User";
+            // Hash password
             user.PasswordHash = HashPassword(user.PasswordHash);
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-
-            return Ok("User registered successfully.");
+            return Ok(new
+            {
+                Message = "User registered successfully.",
+                Role = user.Role
+            });
         }
 
         // ================= LOGIN =================
