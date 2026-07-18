@@ -15,7 +15,7 @@ namespace HotelReservationAPI.MODEL
         public string PasswordHash { get; set; }
 
         // NEW: Default role is User
-        public string Role { get; set; } = "User";
+        public string Role { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
