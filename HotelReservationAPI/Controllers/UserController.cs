@@ -31,7 +31,7 @@ namespace HotelReservationAPI.Controllers
             {
                 return BadRequest("Username or Email already exists.");
             }
-            // NEW: Automatically assign role
+            // NEW: Automatically assign role if not provided, fu
             user.Role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
             // Hash password
             user.PasswordHash = HashPassword(user.PasswordHash);
@@ -53,7 +53,7 @@ namespace HotelReservationAPI.Controllers
                 return Unauthorized("Invalid credentials.");
 
             var token = _jwtHelper.GenerateToken(user.Email, user.Role);
-            return Ok(new { Token = token, Role = user.Role });
+            return Ok(new { Token = token, Role = user.Role , FullName=user.FullName });
         }
 
         // ================= GET ALL =================
