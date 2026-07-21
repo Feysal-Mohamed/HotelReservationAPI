@@ -1,129 +1,99 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using HotelReservationAPI.Helper;
-using HotelReservationAPI.MODEL;
-using Microsoft.EntityFrameworkCore;
-using System.Text;
-using System.Security.Cryptography;
+﻿using HotelReservationAPI.MODEL;
+using HotelReservationAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace HotelReservationAPI.Controllers
 {
+
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/user")]
+
     public class UserController : ControllerBase
     {
-        private readonly userHelper _context;
-        private readonly JwtHelper _jwtHelper;
 
-        public UserController(userHelper context, JwtHelper jwtHelper)
+        private readonly IUserService service;
+
+
+
+        public UserController(IUserService service)
         {
-            _context = context;
-            _jwtHelper = jwtHelper;
+            this.service = service;
         }
 
-    
-        // ================= REGISTER =================
+
+
+
         [HttpPost("register")]
-        public async Task<IActionResult> Register(User user)
+        public IActionResult Register(User user)
         {
-            if (await _context.Users.AnyAsync(u =>
-                u.Username == user.Username ||
-                u.Email == user.Email))
-            {
-                return BadRequest("Username or Email already exists.");
-            }
-            // NEW: Automatically assign role if not provided, fu
-            user.Role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
-            // Hash password
-            user.PasswordHash = HashPassword(user.PasswordHash);
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return Ok(new
-            {
-                Message = "User registered successfully.",
-                Role = user.Role
-            });
+            return Ok(service.Register(user));
         }
 
-        // ================= LOGIN =================
+
+
+
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public IActionResult Login(LoginRequest request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (user == null || !VerifyPassword(request.PasswordHash, user.PasswordHash))
-                return Unauthorized("Invalid credentials.");
 
-            var token = _jwtHelper.GenerateToken(user.Email, user.Role);
-            return Ok(new { Token = token, Role = user.Role , FullName=user.FullName });
+            var result = service.Login(request);
+
+
+            if (result == null)
+                return Unauthorized("Invalid credentials");
+
+
+            return Ok(result);
+
         }
 
-        // ================= GET ALL =================
+
+
+
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public IActionResult GetAll()
         {
-            var users = await _context.Users.ToListAsync();
-            return Ok(users);
+            return Ok(service.GetAll());
         }
 
-        // ================= GET BY ID =================
+
+
+
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public IActionResult GetById(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+
+            var user = service.GetById(id);
+
+
             if (user == null)
-                return NotFound("User not found.");
+                return NotFound();
+
 
             return Ok(user);
+
         }
 
-        // ================= UPDATE =================
+
+
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, User updatedUser)
+        public IActionResult Update(int id, User user)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-                return NotFound("User not found.");
-
-            // Update only provided fields
-            if (!string.IsNullOrEmpty(updatedUser.FullName))
-                user.FullName = updatedUser.FullName;
-            if (!string.IsNullOrEmpty(updatedUser.Username))
-                user.Username = updatedUser.Username;
-            if (!string.IsNullOrEmpty(updatedUser.Email))
-                user.Email = updatedUser.Email;
-            if (!string.IsNullOrEmpty(updatedUser.Role))
-                user.Role = updatedUser.Role;
-            if (!string.IsNullOrEmpty(updatedUser.PasswordHash))
-                user.PasswordHash = HashPassword(updatedUser.PasswordHash);
-
-            await _context.SaveChangesAsync();
-            return Ok("User updated successfully.");
+            return Ok(service.Update(id, user));
         }
 
-        // ================= DELETE =================
+
+
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-                return NotFound("User not found.");
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return Ok("User deleted successfully.");
+            return Ok(service.Delete(id));
         }
 
-        // ================= PASSWORD HELPERS =================
-        private string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
-        }
 
-        private bool VerifyPassword(string password, string hash)
-        {
-            return HashPassword(password) == hash;
-        }
     }
+
 }

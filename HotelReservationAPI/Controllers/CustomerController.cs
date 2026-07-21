@@ -1,96 +1,94 @@
-﻿using HotelReservationAPI.Helper;
-using HotelReservationAPI.MODEL;
+﻿using HotelReservationAPI.MODEL;
+using HotelReservationAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-//using System.Linq;
+
 
 namespace HotelReservationAPI.Controllers
 {
+
     [ApiController]
-    //[Route("api/customer")]
     [Route("api/customers")]
+
     public class CustomerController : ControllerBase
     {
-        private readonly CustomerHelper helper = new CustomerHelper();
 
-        // ================= ADD =================
-        [HttpPost]
+
+        private readonly ICustomerService service;
+
+
+
+        public CustomerController(ICustomerService service)
+        {
+            this.service = service;
+        }
+
+
+
         [HttpPost]
         public IActionResult Add(Customer customer)
         {
-            // Get all customers
-            var (customers, status) = helper.GetAllCustomers();
 
-            if (status != "Success")
-                return BadRequest(status);
+            return Ok(service.Add(customer));
 
-            // Check if customer already exists
-            bool exists = customers.Any(c =>
-                c.Email.Equals(customer.Email, StringComparison.OrdinalIgnoreCase) ||
-                c.Phone == customer.Phone);
-
-            if (exists)
-                return BadRequest("Customer already exists.");
-
-            // Add customer
-            string result = helper.AddCustomer(customer);
-
-            if (result.StartsWith("Success"))
-                return Ok(result);
-
-            return BadRequest(result);
         }
 
-        // ================= GET ALL =================
+
+
         [HttpGet]
         public IActionResult GetAll()
         {
-            var (customers, status) = helper.GetAllCustomers();
 
-            if (status == "Success")
-                return Ok(customers);
+            return Ok(service.GetAll());
 
-            return BadRequest(status);
         }
 
-        // ================= GET BY ID =================
+
+
         [HttpGet("{id}")]
+
         public IActionResult GetById(int id)
         {
-            var (customer, status) = helper.GetCustomerById(id);
 
-            if (status != "Success")
-                return BadRequest(status);
+            var customer = service.GetById(id);
+
 
             if (customer == null)
                 return NotFound("Customer Not Found");
 
+
             return Ok(customer);
+
         }
 
-        // ================= UPDATE =================
+
+
+
         [HttpPatch("{id}")]
-        public IActionResult Patch(int id, Customer customer)
+
+        public IActionResult Update(int id, Customer customer)
         {
+
             customer.CustomerID = id;
-            string result = helper.UpdateCustomer(customer);
 
-            if (result.StartsWith("Success"))
-                return Ok(result);
 
-            return BadRequest(result);
+            return Ok(service.Update(customer));
+
         }
 
 
-        // ================= DELETE =================
+
+
         [HttpDelete("{id}")]
+
         public IActionResult Delete(int id)
         {
-            string result = helper.DeleteCustomer(id);
 
-            if (result.StartsWith("Success"))
-                return Ok(result);
+            return Ok(service.Delete(id));
 
-            return BadRequest(result);
         }
+
+
+
     }
+
 }

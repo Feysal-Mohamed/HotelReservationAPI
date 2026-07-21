@@ -1,135 +1,90 @@
-﻿using HotelReservationAPI.Helper;
-using HotelReservationAPI.MODEL;
+﻿using HotelReservationAPI.MODEL;
+using HotelReservationAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace HotelReservationAPI.Controllers
 {
+
     [ApiController]
     [Route("api/reservation")]
+
     public class ReservationController : ControllerBase
     {
-        private readonly ReservationHelper helper = new ReservationHelper();
 
-        // ================= ADD =================
+        private readonly IReservationService service;
+
+
+
+        public ReservationController(IReservationService service)
+        {
+            this.service = service;
+        }
+
+
 
         [HttpPost]
+
         public IActionResult Add(Reservation r)
         {
-            // Check Customer
-            CustomerHelper customerHelper = new CustomerHelper();
-            var (customer, customerStatus) = customerHelper.GetCustomerById(r.CustomerID);
-
-            if (customerStatus != "Success")
-                return BadRequest(customerStatus);
-
-            if (customer == null)
-                return BadRequest("Customer ID does not exist.");
-
-            // Check Room
-            RoomHelper roomHelper = new RoomHelper();
-            var (room, roomStatus) = roomHelper.GetRoomById(r.RoomID);
-
-            if (roomStatus != "Success")
-                return BadRequest(roomStatus);
-
-            if (room == null)
-                return BadRequest("Room ID does not exist.");
-
-            // Add Reservation
-            string result = helper.AddReservation(r);
-
-            if (result.StartsWith("Success"))
-                return Ok(result);
-
-            return BadRequest(result);
+            return Ok(service.Add(r));
         }
 
-        // ================= GET ALL =================
-        //[HttpGet]
-        //public IActionResult GetAll()
-        //{
-        //    var (reservations, status) = helper.GetAllReservations();
 
-        //    if (status == "Success")
-        //        return Ok(reservations);
 
-        //    return BadRequest(status);
-        //}
+
         [HttpGet]
+
         public IActionResult GetAll()
         {
-            try
-            {
-                var (reservations, status) = helper.GetAllReservations();
-                return Ok(new { status, reservations });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.ToString());
-            }
+            return Ok(service.GetAll());
         }
 
-        // ================= GET BY ID =================
+
+
+
         [HttpGet("{id}")]
+
         public IActionResult GetById(int id)
         {
-            var (reservation, status) = helper.GetReservationById(id);
 
-            if (status != "Success")
-                return BadRequest(status);
+            var reservation = service.GetById(id);
+
 
             if (reservation == null)
                 return NotFound("Reservation Not Found");
 
+
             return Ok(reservation);
+
         }
 
-        // ================= UPDATE =================
-      
+
+
+
         [HttpPut("{id}")]
+
         public IActionResult Update(int id, Reservation r)
         {
+
             r.ReservationID = id;
 
-            // Check Customer
-            CustomerHelper customerHelper = new CustomerHelper();
-            var (customer, customerStatus) = customerHelper.GetCustomerById(r.CustomerID);
 
-            if (customerStatus != "Success")
-                return BadRequest(customerStatus);
+            return Ok(service.Update(r));
 
-            if (customer == null)
-                return BadRequest("Customer ID does not exist.");
-
-            // Check Room
-            RoomHelper roomHelper = new RoomHelper();
-            var (room, roomStatus) = roomHelper.GetRoomById(r.RoomID);
-
-            if (roomStatus != "Success")
-                return BadRequest(roomStatus);
-
-            if (room == null)
-                return BadRequest("Room ID does not exist.");
-
-            // Update Reservation
-            string result = helper.UpdateReservation(r);
-
-            if (result.StartsWith("Success"))
-                return Ok(result);
-
-            return BadRequest(result);
         }
 
-        // ================= DELETE =================
+
+
+
         [HttpDelete("{id}")]
+
         public IActionResult Delete(int id)
         {
-            string result = helper.DeleteReservation(id);
-
-            if (result.StartsWith("Success"))
-                return Ok(result);
-
-            return BadRequest(result);
+            return Ok(service.Delete(id));
         }
+
+
     }
+
 }
