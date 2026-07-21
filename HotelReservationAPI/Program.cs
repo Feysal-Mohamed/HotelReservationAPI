@@ -1,22 +1,21 @@
 using HotelReservationAPI.Helper;
+using HotelReservationAPI.Repositories;
+using HotelReservationAPI.Repositories.Interfaces;
+using HotelReservationAPI.Services;
+using HotelReservationAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 // =============================
 // Initialize AppConfig
 // =============================
 AppConfig.Configuration = builder.Configuration;
 
-
-// =============================
-// Database (EF Core)
-// =============================
-builder.Services.AddDbContext<userHelper>(options =>
-    options.UseSqlServer(AppConfig.ConnectionString));
 
 
 // =============================
@@ -29,90 +28,144 @@ builder.Services.AddSingleton(new JwtHelper(
 ));
 
 
+
 // =============================
-// Services
+// Repository Registration
 // =============================
+
+builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+
+builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
+
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+
+
+// =============================
+// Service Registration
+// =============================
+
+builder.Services.AddScoped<IRoomService, RoomService>();
+
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+
+builder.Services.AddScoped<IReservationService, ReservationService>();
+
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+builder.Services.AddScoped<IUserService, UserService>();
+
+
+
+
+// =============================
+// Controllers + Swagger
+// =============================
+
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 
 
+
+
 // =============================
-// NEW CORS - Allow Any Frontend
+// CORS
 // =============================
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin()   // Allow any frontend/domain
-                  .AllowAnyHeader()   // Allow any headers (Authorization, Content-Type)
-                  .AllowAnyMethod();  // Allow GET, POST, PUT, DELETE
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
         });
 });
+
+
 
 
 // =============================
 // Authentication JWT
 // =============================
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+
+builder.Services.AddAuthentication(
+    JwtBearerDefaults.AuthenticationScheme)
+
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters =
+    new TokenValidationParameters
     {
-        options.TokenValidationParameters =
-        new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
 
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidateIssuer = true,
 
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateAudience = true,
 
-            IssuerSigningKey =
-                new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(
-                        builder.Configuration["Jwt:Key"]!
-                    )
-                )
-        };
-    });
+        ValidateLifetime = true,
+
+        ValidateIssuerSigningKey = true,
 
 
-// =============================
-// Build App
-// =============================
+        ValidIssuer =
+        builder.Configuration["Jwt:Issuer"],
+
+
+        ValidAudience =
+        builder.Configuration["Jwt:Audience"],
+
+
+        IssuerSigningKey =
+        new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(
+                builder.Configuration["Jwt:Key"]!
+            ))
+
+    };
+
+});
+
+
+
+
+
 var app = builder.Build();
 
 
-// =============================
-// Developer Exception
-// =============================
-app.UseDeveloperExceptionPage();
 
 
 // =============================
 // Swagger
 // =============================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
+
     app.UseSwaggerUI();
 }
 
 
-// =============================
-// Middleware
-// =============================
+
+
 app.UseHttpsRedirection();
 
 
+
 // =============================
-// NEW CORS Middleware
-// Must be before Authentication
+// CORS
 // =============================
+
 app.UseCors("AllowAll");
+
 
 
 app.UseAuthentication();
@@ -120,13 +173,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 
-// =============================
-// Controllers
-// =============================
+
 app.MapControllers();
 
 
-// =============================
-// Run Application
-// =============================
 app.Run();
